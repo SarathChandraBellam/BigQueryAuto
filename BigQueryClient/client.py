@@ -17,14 +17,19 @@ class BigQueryClient:
         return client_
 
     @staticmethod
-    def execute_query(client, query, result_type="rows"):
+    def execute_query(client, query, result_type="rows", timeout=None):
         """
         Method to execute the query and return the data as per result type
         """
         query_job = client.query(query)
-        if result_type.lower() == "rows":
-            return query_job.result()
+        if timeout is not None:
+            query_job.configuration.query.timeout = timeout
+        result = query_job.result()
+        if result_type.lower() == "json":
+            json_data = [dict(row) for row in result]
+            return json_data
         elif result_type.lower() == "dataframe":
-            return query_job.to_dataframe()
+            df = query_job.to_dataframe()
+            return df
         else:
-            return query_job.result()
+            return result
